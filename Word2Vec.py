@@ -1,5 +1,5 @@
-import tensorflow as tf 
-import numpy as np 
+import tensorflow as tf
+import numpy as np
 import re
 from collections import Counter
 import sys
@@ -21,7 +21,7 @@ numNegativeSample = 64
 windowSize = 5
 numIterations = 100000
 
-# This function just takes in the conversation data and makes it 
+# This function just takes in the conversation data and makes it
 # into one huge string, and then uses a Counter to identify words
 # and the number of occurences
 def processDataset(filename):
@@ -34,14 +34,14 @@ def processDataset(filename):
 	return myStr, finalDict
 
 def createTrainingMatrices(dictionary, corpus):
-	allUniqueWords = list(dictionary.keys())	
+	allUniqueWords = list(dictionary.keys())
 	allWords = corpus.split()
 	numTotalWords = len(allWords)
 	xTrain=[]
 	yTrain=[]
 	for i in range(numTotalWords):
 		if i % 100000 == 0:
-			print 'Finished %d/%d total words' % (i, numTotalWords)
+			print ( 'Finished %d/%d total words' % (i, numTotalWords))
 		wordsAfter = allWords[i + 1:i + windowSize + 1]
 		wordsBefore = allWords[max(0, i - windowSize):i]
 		wordsAdded = wordsAfter + wordsBefore
@@ -53,7 +53,7 @@ def createTrainingMatrices(dictionary, corpus):
 def getTrainingBatch():
 	num = randint(0,numTrainingExamples - batchSize - 1)
 	arr = xTrain[num:num + batchSize]
-	labels = yTrain[num:num + batchSize]
+	labels = np.array(yTrain[num:num + batchSize])
 	return arr, labels[:,np.newaxis]
 
 continueWord2Vec = True
@@ -61,29 +61,29 @@ continueWord2Vec = True
 if (os.path.isfile('Word2VecXTrain.npy') and os.path.isfile('Word2VecYTrain.npy') and os.path.isfile('wordList.txt')):
 	xTrain = np.load('Word2VecXTrain.npy')
 	yTrain = np.load('Word2VecYTrain.npy')
-	print 'Finished loading training matrices'
+	print ( 'Finished loading training matrices')
 	with open("wordList.txt", "rb") as fp:
 		wordList = pickle.load(fp)
-	print 'Finished loading word list'
+	print ( 'Finished loading word list')
 
 else:
 	fullCorpus, datasetDictionary = processDataset('conversationData.txt')
-	print 'Finished parsing and cleaning dataset'
+	print ( 'Finished parsing and cleaning dataset')
 	wordList = list(datasetDictionary.keys())
-	createOwnVectors = raw_input('Do you want to create your own vectors through Word2Vec (y/n)?')
+	createOwnVectors = input('Do you want to create your own vectors through Word2Vec (y/n)?')
 	if (createOwnVectors == 'y'):
 		xTrain, yTrain  = createTrainingMatrices(datasetDictionary, fullCorpus)
-		print 'Finished creating training matrices'
+		print ( 'Finished creating training matrices')
 		np.save('Word2VecXTrain.npy', xTrain)
 		np.save('Word2VecYTrain.npy', yTrain)
 	else:
 		continueWord2Vec = False
-	with open("wordList.txt", "wb") as fp: 
+	with open("wordList.txt", "wb") as fp:
 		pickle.dump(wordList, fp)
-	
-# If you do not want to create your own word vectors and you'd just like to 
-# have Tensorflow's seq2seq take care of that, then you don't need to run 
-# anything below this line. 
+
+# If you do not want to create your own word vectors and you'd just like to
+# have Tensorflow's seq2seq take care of that, then you don't need to run
+# anything below this line.
 if (continueWord2Vec == False):
 	sys.exit()
 
@@ -115,7 +115,7 @@ for i in range(numIterations):
 	trainInputs, trainLabels = getTrainingBatch()
 	_, curLoss = sess.run([optimizer, loss], feed_dict={inputs: trainInputs, outputs: trainLabels})
 	if (i % 10000 == 0):
-		print ('Current loss is:', curLoss)
-print 'Saving the word embedding matrix'
+		print ( ('Current loss is:', curLoss))
+print ( 'Saving the word embedding matrix')
 embedMatrix = embeddingMatrix.eval(session=sess)
 np.save('embeddingMatrix.npy', embedMatrix)
